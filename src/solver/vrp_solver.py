@@ -68,9 +68,8 @@ class VRPSolver:
 
         if solution:
             return self._parse_solution(manager, routing, solution, data, day)
-        else:
-            print(f"\u274c No solution found for Day {day + 1}!")
-            return set(), {}
+        print(f"\u274c No solution found for Day {day + 1}!")
+        return set(), {}
 
     def _parse_solution(self, manager, routing, solution, data, day):
         total_metric = 0

@@ -4,18 +4,19 @@ Route utilities for the Vehicle Routing Problem.
 
 import numpy as np
 
-def sort_nodes_by_distance(matrix):
+def sort_nodes_by_distance(df):
     """
-    Sort nodes by distance from the depot.
+    Sort node keys (column labels) by distance from the depot (first row).
 
     Args:
-        matrix: Distance matrix
+        df (pd.DataFrame): Distance matrix as a DataFrame.
 
     Returns:
-        list: List of node indices sorted by distance from the depot
+        list: List of column labels sorted by distance from the depot.
     """
-    distances = [(node, matrix[0][node]) for node in range(1, len(matrix))]
-    return [node for node, _ in sorted(distances, key=lambda x: x[1])]
+    depot_row = df.iloc[0, 1:]  # Skip first column (self-distance)
+    sorted_keys = depot_row.sort_values().index.tolist()
+    return sorted_keys
 
 def distribute_nodes_to_vehicles(nodes, num_vehicles):
     """

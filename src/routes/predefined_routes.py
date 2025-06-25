@@ -9,149 +9,98 @@ import pandas as pd
 
 class PredefinedRouteManager:
     """
-    Class for managing pre-defined routes.
+    Manages all pre-defined routes stored in a single JSON file.
+    Routes are stored as a dictionary with stringified route IDs as keys.
     """
-    def __init__(self, routes_dir="data/routes"):
-        """
-        Initialize the PredefinedRouteManager.
 
-        Args:
-            routes_dir: Directory to store route files
-        """
-        self.routes_dir = routes_dir
+    def __init__(self, file_path="data/routes/all_routes.json"):
+        self.file_path = file_path
         self.routes = {}
+        os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
+        self._load_routes()
 
-        # Create routes directory if it doesn't exist
-        os.makedirs(self.routes_dir, exist_ok=True)
-
-        # Load existing routes
-        self.load_routes()
-
-    def load_routes(self):
+    def _load_routes(self):
         """
-        Load all pre-defined routes from the routes directory.
+        Load all routes from a single JSON file.
         """
-        self.routes = {}
+        if os.path.exists(self.file_path):
+            try:
+                with open(self.file_path, 'r') as f:
+                    self.routes = json.load(f)
+            except Exception as e:
+                print(f"Error loading routes: {e}")
+                self.routes = {}
+        else:
+            self.routes = {}
 
-        # Check if routes directory exists
-        if not os.path.exists(self.routes_dir):
-            return
-
-        # Load each route file
-        for filename in os.listdir(self.routes_dir):
-            if filename.endswith('.json'):
-                route_path = os.path.join(self.routes_dir, filename)
-                try:
-                    with open(route_path, 'r') as f:
-                        route_data = json.load(f)
-                        route_id = filename.replace('.json', '')
-                        self.routes[route_id] = route_data
-                except Exception as e:
-                    print(f"Error loading route {filename}: {str(e)}")
-
-    def save_route(self, route_id, route_data):
+    def _save_routes(self):
         """
-        Save a pre-defined route.
-
-        Args:
-            route_id: Unique identifier for the route
-            route_data: Dictionary containing route information
+        Save all routes to a single JSON file.
         """
-        # Create routes directory if it doesn't exist
-        os.makedirs(self.routes_dir, exist_ok=True)
-
-        # Save route to file
-        route_path = os.path.join(self.routes_dir, f"{route_id}.json")
-        with open(route_path, 'w') as f:
-            json.dump(route_data, f, indent=2)
-
-        # Update routes dictionary
-        self.routes[route_id] = route_data
-
-    def delete_route(self, route_id):
-        """
-        Delete a pre-defined route.
-
-        Args:
-            route_id: Unique identifier for the route
-        """
-        # Check if route exists
-        if route_id not in self.routes:
-            return False
-
-        # Delete route file
-        route_path = os.path.join(self.routes_dir, f"{route_id}.json")
-        if os.path.exists(route_path):
-            os.remove(route_path)
-
-        # Remove from routes dictionary
-        del self.routes[route_id]
-        return True
-
-    def get_route(self, route_id):
-        """
-        Get a pre-defined route.
-
-        Args:
-            route_id: Unique identifier for the route
-
-        Returns:
-            route_data: Dictionary containing route information
-        """
-        return self.routes.get(route_id)
+        try:
+            with open(self.file_path, 'w') as f:
+                json.dump(self.routes, f, indent=2)
+        except Exception as e:
+            print(f"Error saving routes: {e}")
 
     def get_all_routes(self):
         """
-        Get all pre-defined routes.
-
-        Returns:
-            routes: Dictionary of all routes
+        Return all routes as a dictionary.
         """
         return self.routes
 
-    def create_route_from_codes(self, route_name, shop_codes, description=""):
+    def get_route(self, route_id):
         """
-        Create a new route from a list of shop codes.
+        Retrieve a specific route using its ID (int or str).
+        """
+        return self.routes.get(str(route_id))
+
+    def save_route(self, route_id, route_data):
+        """
+        Add or update a route with the given route ID.
+        """
+        self.routes[str(route_id)] = route_data
+        self._save_routes()
+
+    def delete_route(self, route_id):
+        """
+        Remove a route by its ID.
+        """
+        route_id = str(route_id)
+        if route_id in self.routes:
+            del self.routes[route_id]
+            self._save_routes()
+            return True
+        return False
+
+    def create_route_from_codes(self, route_id, route_name, shop_codes, description=""):
+        """
+        Create and save a new route from shop codes.
 
         Args:
-            route_name: Name of the route
-            shop_codes: List of shop codes in order or a string with codes separated by commas or newlines
-            description: Description of the route
+            route_id (int or str): Unique numeric ID for the route.
+            route_name (str): Human-readable route name.
+            shop_codes (list or str): List of shop codes or comma-separated string.
+            description (str): Optional description for the route.
 
         Returns:
-            route_id: Unique identifier for the route
+            str: The route ID (as string) used to store the route.
         """
-        # Generate a unique ID for the route
-        route_id = route_name.lower().replace(' ', '_')
-
-        # Process shop codes - handle different input formats
         processed_codes = []
 
-        # If shop_codes is a string, split it by commas and/or newlines
         if isinstance(shop_codes, str):
-            # Replace commas with newlines, then split by newlines
             codes_str = shop_codes.replace(',', '\n')
-            # Split by newlines and strip whitespace
             codes = [code.strip() for code in codes_str.split('\n') if code.strip()]
             processed_codes.extend(codes)
         elif isinstance(shop_codes, list):
-            # If it's already a list, process each item
             for item in shop_codes:
-                if isinstance(item, str):
-                    # If the item contains newlines, split it
-                    if '\n' in item or '\r\n' in item:
-                        # Replace commas with newlines, then split by newlines
-                        item_str = item.replace(',', '\n')
-                        # Split by newlines and strip whitespace
-                        codes = [code.strip() for code in item_str.split('\n') if code.strip()]
-                        processed_codes.extend(codes)
-                    else:
-                        processed_codes.append(item.strip())
+                if isinstance(item, str) and ('\n' in item or '\r\n' in item):
+                    item_str = item.replace(',', '\n')
+                    codes = [code.strip() for code in item_str.split('\n') if code.strip()]
+                    processed_codes.extend(codes)
                 else:
-                    # If it's not a string, convert to string
                     processed_codes.append(str(item).strip())
 
-        # Create route data
         route_data = {
             "name": route_name,
             "description": description,
@@ -159,7 +108,5 @@ class PredefinedRouteManager:
             "created_at": pd.Timestamp.now().isoformat()
         }
 
-        # Save route
         self.save_route(route_id, route_data)
-
-        return route_id
+        return str(route_id)
