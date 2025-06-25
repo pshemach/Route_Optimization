@@ -16,12 +16,14 @@ class VRPController:
         self.vehicle_routes = {}
         self.max_visits = []
         self.max_distance = []
+        self.depot = None
 
-    def load_inputs(self, demand_path, matrix_path, gps_path, base_penalty, total_days, today):
+    def load_inputs(self, demand_path, matrix_path, gps_path, base_penalty, total_days, today, depot_code='0'):
         # Load all input files
         self.demand_df = get_demand_df(today_path=demand_path)
         self.matrix_df = load_matrix_df(matrix_path)
         self.master_gps_df = load_df(path=gps_path)
+        self.depot = depot_code
 
         # Compute demand dictionary and penalty list
         self.demand_dict = update_demand_dic(self.demand_df)
@@ -54,7 +56,8 @@ class VRPController:
                 demand_dict=self.demand_dict,
                 max_distance=[self.max_distance[vehicle_id]],
                 max_visits=[self.max_visits[vehicle_id]],
-                penalty_list=[1000] * len(shop_codes)  # Or specific penalties
+                penalty_list=[1000] * len(shop_codes),  # Or specific penalties
+                depot_code=self.depot
             )
             data = model.get_data()
             solver = VRPSolver()
@@ -80,7 +83,8 @@ class VRPController:
                 demand_dict=self.demand_dict,
                 max_distance=[self.max_distance[i] for i in available_vehicle_ids],
                 max_visits=[self.max_visits[i] for i in available_vehicle_ids],
-                penalty_list=[self.penalty_list[i] for i in range(len(self.penalty_list)) if self.demand_dict['key'][i] in remaining_codes]
+                penalty_list=[self.penalty_list[i] for i in range(len(self.penalty_list)) if self.demand_dict['key'][i] in remaining_codes],
+                depot_code=self.depot
             )
             data = model.get_data()
             solver = VRPSolver()
