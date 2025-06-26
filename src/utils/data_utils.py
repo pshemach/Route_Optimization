@@ -2,6 +2,7 @@ import pandas as pd
 from src.utils.helper_utils import get_str_key
 
 def load_matrix_df(path):
+    print(path)
     return pd.read_csv(path, index_col=0)
 
 def load_df(path):

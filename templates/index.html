@@ -1,260 +1,159 @@
-{% extends "base.html" %} {% block title %}Vehicle Routing Solution - Upload{%
-endblock %} {% block content %}
-<div class="row">
-  <div class="col-md-8 offset-md-2">
-    <div class="card">
-      <div class="card-header">
-        <h2 class="mb-0">Upload Purchase Order File</h2>
-      </div>
-      <div class="card-body">
-        <form
-          id="upload-form"
-          action="/upload"
-          method="post"
-          enctype="multipart/form-data"
-        >
-          <div class="mb-3">
-            <label for="po_file" class="form-label"
-              >Purchase Order (PO) File</label
-            >
-            <input
-              type="file"
-              class="form-control"
-              id="po_file"
-              name="po_file"
-              accept=".csv"
-              required
-            />
-            <div class="form-text">
-              Upload a CSV file containing the purchase order data.
-            </div>
-          </div>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>VRP Web App</title>
+    <style>
+      body { font-family: Arial, margin: 20px; }
+      form { margin-bottom: 30px; }
+      textarea { width: 100%; height: 100px; }
+      iframe { width: 100%; height: 400px; border: 1px solid #ccc; }
+    </style>
+  </head>
+  <body>
+    <h1>Vehicle Routing Solver</h1>
 
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label for="matrix_path" class="form-label"
-                >Distance Matrix Path</label
-              >
-              <input
-                type="text"
-                class="form-control"
-                id="matrix_path"
-                name="matrix_path"
-                value="data/master/osrm_distance_matrix.csv"
-              />
-              <div class="form-text">Path to the distance matrix file.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="gps_path" class="form-label">GPS Data Path</label>
-              <input
-                type="text"
-                class="form-control"
-                id="gps_path"
-                name="gps_path"
-                value="data/master/master_gps.csv"
-              />
-              <div class="form-text">Path to the GPS coordinates file.</div>
-            </div>
-          </div>
+    <section>
+      <h2>Predefined Routes</h2>
+      <button onclick="loadRoutes()">Load All</button>
+      <div id="route-list"></div>
 
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <div class="form-check form-switch">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  id="use_time"
-                  name="use_time"
-                  value="true"
-                />
-                <label class="form-check-label" for="use_time"
-                  >Use Time Matrix (instead of Distance)</label
-                >
-              </div>
-            </div>
-          </div>
+      <h3>Create / Update Route</h3>
+      <form id="route-form">
+        <input type="hidden" name="route_id" />
+        Name: <input name="route_name" /><br /><br />
+        Shop codes (comma sep):<br />
+        <textarea name="shop_codes"></textarea><br /><br />
+        <button type="submit">Save Route</button>
+      </form>
+    </section>
 
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label for="max_nodes" class="form-label">Maximum Nodes</label>
-              <input
-                type="number"
-                class="form-control"
-                id="max_nodes"
-                name="max_nodes"
-                value="2000"
-                min="1"
-              />
-              <div class="form-text">Maximum number of nodes to visit.</div>
-            </div>
-          </div>
+    <section>
+      <h2>Run VRP</h2>
+      <form id="vrp-form">
+        Demand CSV: <input type="file" name="demand_csv" required /><br /><br />
+        Matrix path:
+        <input
+          name="matrix_path"
+          value="data/master/osrm_distance_matrix.csv"
+          required
+        /><br /><br />
+        GPS path:
+        <input
+          name="gps_path"
+          value="data/master/master_gps.csv"
+          required
+        /><br /><br />
+        Today: <input name="today" value="2025-03-03" /><br /><br />
+        Vehicles:
+        <input type="number" name="num_vehicles" value="4" /><br /><br />
+        Max Visits (comma):
+        <input name="max_visits" value="5,5,5,5" /><br /><br />
+        Max Distance:
+        <input name="max_distance" value="200,200,200,200" /><br /><br />
+        Predefined:
+        <select name="predefined_route_id">
+          <option value="">None</option></select
+        ><br /><br />
+        <button type="submit">Solve</button>
+      </form>
 
-          <div class="card mb-3">
-            <div class="card-header">
-              <h5 class="mb-0">Vehicle Configuration</h5>
-            </div>
-            <div class="card-body">
-              <div class="row mb-3">
-                <div class="col-md-4">
-                  <label for="num_vehicles" class="form-label"
-                    >Number of Vehicles</label
-                  >
-                  <input
-                    type="number"
-                    class="form-control"
-                    id="num_vehicles"
-                    name="num_vehicles"
-                    value="8"
-                    min="1"
-                    max="20"
-                  />
-                  <div class="form-text">Number of vehicles available.</div>
-                </div>
-                <div class="col-md-8">
-                  <div class="d-flex justify-content-end mt-4">
-                    <button
-                      type="button"
-                      class="btn btn-outline-primary"
-                      id="generate-vehicle-fields"
-                    >
-                      <i class="fas fa-sync me-2"></i>Generate Vehicle Fields
-                    </button>
-                  </div>
-                </div>
-              </div>
+      <pre id="json-output"></pre>
+      <div id="maps"></div>
+    </section>
 
-              <div id="vehicle-config-container">
-                <!-- Vehicle configuration fields will be generated here -->
-              </div>
-            </div>
-          </div>
-
-          <div class="d-grid gap-2">
-            <button type="submit" class="btn btn-primary" id="submit-btn">
-              <i class="fas fa-upload me-2"></i>Upload and Solve
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header">
-        <h3 class="mb-0">How It Works</h3>
-      </div>
-      <div class="card-body">
-        <ol>
-          <li>Upload a CSV file containing the purchase order data.</li>
-          <li>Configure the routing parameters (optional).</li>
-          <li>Click "Upload and Solve" to start the routing process.</li>
-          <li>
-            View the results, including route maps, summaries, and detailed
-            information.
-          </li>
-        </ol>
-        <p>
-          The system will generate optimal routes for your vehicles based on the
-          purchase order data and the specified constraints.
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
-{% endblock %} {% block scripts %}
-<script>
-  $(document).ready(function () {
-    // Load pre-defined routes
-    let predefinedRoutes = [];
-
-    function loadPredefinedRoutes() {
-      $.ajax({
-        url: "/api/routes",
-        type: "GET",
-        dataType: "json",
-        success: function (data) {
-          predefinedRoutes = data;
-          generateVehicleFields();
-        },
-        error: function () {
-          console.error("Failed to load pre-defined routes");
-        },
-      });
-    }
-
-    // Load routes on page load
-    loadPredefinedRoutes();
-
-    function generateVehicleFields() {
-      const numVehicles = parseInt($("#num_vehicles").val());
-      let html = "";
-
-      // Generate route options HTML
-      let routeOptionsHtml = '<option value="">None</option>';
-      for (const routeId in predefinedRoutes) {
-        const route = predefinedRoutes[routeId];
-        routeOptionsHtml += `<option value="${routeId}">${route.name} (${route.shop_codes.length} shops)</option>`;
+    <script>
+      function loadRoutes() {
+        fetch("/api/routes")
+          .then((r) => r.json())
+          .then((data) => {
+            const list = document.getElementById("route-list");
+            const sel = document.querySelector(
+              "select[name=predefined_route_id]"
+            );
+            list.innerHTML = "";
+            sel.innerHTML = '<option value="">None</option>';
+            Object.entries(data).forEach(([id, rt]) => {
+              list.innerHTML += `<div>
+            <b>${rt.name}</b> (ID=${id}) |
+            <button onclick="editRoute('${id}')">Edit</button> |
+            <button onclick="delRoute('${id}')">Delete</button>
+          </div>`;
+              sel.innerHTML += `<option value="${id}">${rt.name}</option>`;
+            });
+          });
       }
 
-      for (let i = 0; i < numVehicles; i++) {
-        // Try to get previous values if fields already exist
-        const existingVisits = $(`#max_visits_${i}`).val() || 12;
-        const existingDistance = $(`#max_distance_${i}`).val() || 500;
-        const existingRoute = $(`#vehicle_route_${i}`).val() || "";
-
-        html += `
-          <div class="vehicle-config card mb-2">
-            <div class="card-header bg-light">
-              <h6 class="mb-0">Vehicle ${i + 1}</h6>
-            </div>
-            <div class="card-body">
-              <div class="row">
-                <div class="col-md-4">
-                  <label for="max_visits_${i}" class="form-label">Max Visits</label>
-                  <input type="number" class="form-control" id="max_visits_${i}" name="max_visits[${i}]" value="${existingVisits}" min="1">
-                  <div class="form-text">Maximum number of visits.</div>
-                </div>
-                <div class="col-md-4">
-                  <label for="max_distance_${i}" class="form-label">Max Distance (km)</label>
-                  <input type="number" class="form-control" id="max_distance_${i}" name="max_distance[${i}]" value="${existingDistance}" min="1">
-                  <div class="form-text">Maximum distance in kilometers.</div>
-                </div>
-                <div class="col-md-4">
-                  <label for="vehicle_route_${i}" class="form-label">Pre-defined Route</label>
-                  <select class="form-select" id="vehicle_route_${i}" name="vehicle_route[${i}]">
-                    ${routeOptionsHtml}
-                  </select>
-                  <div class="form-text">Optional pre-defined route.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
+      function editRoute(id) {
+        fetch("/api/routes")
+          .then((r) => r.json())
+          .then((data) => {
+            const rt = data[id];
+            const f = document.getElementById("route-form");
+            f.route_id.value = id;
+            f.route_name.value = rt.name;
+            f.shop_codes.value = rt.shop_codes.join(",");
+          });
       }
 
-      $("#vehicle-config-container").html(html);
-    }
+      function delRoute(id) {
+        fetch("/api/routes/" + id, { method: "DELETE" }).then(() =>
+          loadRoutes()
+        );
+      }
 
-    // Generate fields on button click
-    $("#generate-vehicle-fields").click(function () {
-      generateVehicleFields();
-    });
+      document.getElementById("route-form").onsubmit = (e) => {
+        e.preventDefault();
+        const f = document.getElementById("route-form");
+        const id = f.route_id.value;
+        const body = JSON.stringify({
+          route_name: f.route_name.value,
+          shop_codes: f.shop_codes.value.split(",").map((s) => s.trim()),
+        });
+        fetch("/api/routes/" + (id || ""), {
+          method: id ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+        }).then(() => {
+          f.reset();
+          loadRoutes();
+        });
+      };
 
-    // Generate fields on page load
-    generateVehicleFields();
+      document.getElementById("vrp-form").onsubmit = (e) => {
+        e.preventDefault();
+        const form = new FormData();
+        const f = document.getElementById("vrp-form");
+        for (const inp of f.elements) {
+          if (inp.name === "demand_csv") form.append(inp.name, inp.files[0]);
+          else if (inp.name === "max_visits" || inp.name === "max_distance") {
+            inp.value
+              .split(",")
+              .forEach((v) => form.append(inp.name, v.trim()));
+          } else form.append(inp.name, inp.value);
+        }
+        fetch("/api/upload-solve", { method: "POST", body: form })
+          .then((r) => r.json())
+          .then((resp) => {
+            document.getElementById("json-output").textContent = JSON.stringify(
+              resp,
+              null,
+              2
+            );
+            const maps = document.getElementById("maps");
+            maps.innerHTML = "";
+            if (resp.routes) {
+              Object.keys(resp.routes).forEach((vid) => {
+                const ifr = document.createElement("iframe");
+                ifr.src = `maps/day_1_vehicle_${vid}.html`;
+                maps.appendChild(ifr);
+              });
+            }
+          });
+      };
 
-    // Update fields when number of vehicles changes
-    $("#num_vehicles").change(function () {
-      generateVehicleFields();
-    });
-
-    // Form submission with loading indicator
-    $("#upload-form").submit(function () {
-      $("#submit-btn").html(
-        '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...'
-      );
-      $("#submit-btn").prop("disabled", true);
-      // Form will submit normally and redirect to the solve page
-    });
-  });
-</script>
-{% endblock %}
+      // Initial load
+      loadRoutes();
+    </script>
+  </body>
+</html>
