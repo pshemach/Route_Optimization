@@ -1,7 +1,6 @@
 {
   "1": {
     "name": "Galle Route",
-    "description": "",
     "shop_codes": [
       "109",
       "163",
@@ -22,31 +21,13 @@
       "1370",
       "1387",
       "1724",
-      "1763",
-      "1768",
-      "1766",
-      "1772",
-      "1651",
-      "1664",
-      "1781",
-      "1785",
-      "1787",
-      "1797",
-      "1800",
-      "1809",
-      "1847",
-      "1862",
-      "1775",
-      "1849",
-      "1345",
-      "1814"
+      "1763"
     ],
+    "description": "",
     "created_at": "2025-05-22T16:11:48.371633"
   },
-
   "2": {
     "name": "Mathale Route ",
-    "description": "Mathale Digana Katugasthota",
     "shop_codes": [
       "1113",
       "1159",
@@ -71,6 +52,7 @@
       "SYMT",
       "SYMX"
     ],
+    "description": "Mathale Digana Katugasthota",
     "created_at": "2025-05-22T16:04:29.427541"
   }
 }

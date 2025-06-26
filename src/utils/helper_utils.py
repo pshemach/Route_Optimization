@@ -37,10 +37,11 @@ def get_date_difference(date_str1, date_str2, format1='%Y-%m-%d', format2='%Y-%m
         return None
 
 def get_str_key(df):
-    if df['CODE'].dtype in ['float', 'int']:
-        df['CODE'] = df['CODE'].astype(int)
-        df['CODE'] = df['CODE'].astype(str)
-        print('Converting to Object')
+    if np.issubdtype(df['CODE'].dtype, np.number):
+        df['CODE'] = df['CODE'].astype(int).astype(str)
+        print('Converting CODE to string')
+    else:
+        df['CODE'] = df['CODE'].astype(str)  # Force conversion to string regardless
     return df
 
 import requests

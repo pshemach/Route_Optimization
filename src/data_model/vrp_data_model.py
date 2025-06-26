@@ -39,7 +39,6 @@ class VRPDataModel:
 
         # Filter out invalid nodes and exclude depot from visit list
         filtered_nodes = [node for node in self.nodes_to_visit if node in valid_keys and node != self.depot_code]
-
         # Build node list (depot always at index 0)
         all_nodes = [self.depot_code] + filtered_nodes
 

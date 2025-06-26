@@ -13,6 +13,7 @@ def load_daily_demand(file_name):
         df = pd.read_csv(file_name)
         df = df.dropna(subset=['CODE'])
         df = get_str_key(df)
+        print(df.info())
         if "DEMAND" not in df.columns:
             df['DEMAND'] = 1
         df['DATE'] = pd.to_datetime(df['DATE'])

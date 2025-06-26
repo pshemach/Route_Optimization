@@ -73,7 +73,7 @@ def upload_and_solve():
                                vehicle_routes={0: pred_id} if pred_id else {})
         visited, routes = ctr.solve_single_day()
 
-        mgr = RouteMapManager(ctr.master_gps_df, ctr.demand_df, output_dir="frontend/maps")
+        mgr = RouteMapManager(ctr.master_gps_df, ctr.demand_df, output_dir="frontend")
         mgr.generate_and_save_maps(routes, 0)
         mgr.summarize_and_save(routes, 0)
 
@@ -83,5 +83,5 @@ def upload_and_solve():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    os.makedirs("frontend/maps", exist_ok=True)
+    os.makedirs("frontend", exist_ok=True)
     app.run(host="0.0.0.0", port=5096, debug=True)
